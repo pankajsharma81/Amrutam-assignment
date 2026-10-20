@@ -1,0 +1,218 @@
+openapi: 3.0.3
+info:
+  title: Demo API
+  description: Demo project API documentation
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000/v1
+    description: Local development
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          type: object
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        error:
+          type: object
+
+    UserPublic:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, MANAGER, STAFF, CUSTOMER]
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+
+  /auth/login:
+    post:
+      summary: Login
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid credentials
+
+  /auth/refresh-token:
+    post:
+      summary: Rotate refresh token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: New token pair issued
+
+  /users:
+    get:
+      summary: List users
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [ADMIN, MANAGER, STAFF, CUSTOMER]
+      responses:
+        '200':
+          description: User list
+
+    post:
+      summary: Create user
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, name, password, role]
+              properties:
+                email:
+                  type: string
+                  format: email
+                name:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                  enum: [ADMIN, MANAGER, STAFF, CUSTOMER]
+                phone:
+                  type: string
+      responses:
+        '201':
+          description: User created
+
+  /users/{uuid}:
+    get:
+      summary: Get user by UUID
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User found
+        '404':
+          description: User not found
+
+    put:
+      summary: Update user
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User updated
+
+    delete:
+      summary: Delete user
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User deleted

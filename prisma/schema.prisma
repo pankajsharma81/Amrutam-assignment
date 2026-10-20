@@ -1,0 +1,64 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  STAFF
+  CUSTOMER
+}
+
+model users {
+  id         Int      @id @default(autoincrement())
+  uuid       String   @unique @default(uuid())
+  email      String   @unique
+  name       String
+  password   String
+  role       UserRole @default(STAFF)
+  phone      String?
+  is_active  Boolean  @default(true)
+  is_deleted Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  refresh_sessions user_refresh_sessions[]
+}
+
+model user_refresh_sessions {
+  id                  Int       @id @default(autoincrement())
+  user_id             Int
+  session_id          String    @unique
+  token_hash          String
+  ip_address          String?
+  user_agent          String?
+  revoked_at          DateTime?
+  replaced_by_session String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  // Relations
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model admins {
+  id         Int      @id @default(autoincrement())
+  uuid       String   @unique @default(uuid())
+  email      String   @unique
+  name       String
+  password   String
+  user_type  String   @default("SUPER_ADMIN")
+  is_active  Boolean  @default(true)
+  is_deleted Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
