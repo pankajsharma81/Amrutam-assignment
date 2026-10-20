@@ -1,5 +1,5 @@
-
-export type UserRole = 'ADMIN' | 'MANAGER' | 'STAFF' | 'CUSTOMER';
+import type { UserRole } from '@prisma/client';
+export type { UserRole };
 
 export interface AuthUser {
     id: number;

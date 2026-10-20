@@ -9,6 +9,7 @@ import {
     changePasswordSchema,
     refreshTokenSchema,
     logoutSchema,
+    registerSchema,
 } from './auth.schema';
 import {
     generateTokenPair,
@@ -17,7 +18,7 @@ import {
     verifyPassword,
     verifyRefreshTokenHash,
 } from './auth.tokens';
-import { authenticateUser } from './auth.service';
+import { authenticateUser, registerUser } from './auth.service';
 import { AuthRepo } from './auth.repo';
 import { asyncWrapper } from '../../shared/utils/asyncWrapper';
 import { sendSuccess } from '../../shared/utils/apiResponse';
@@ -33,9 +34,22 @@ interface RefreshTokenPayload extends JwtPayload {
     typ: 'refresh';
 }
 
-// ─────────────────────────────────────────────────────────────
-// Login
-// ─────────────────────────────────────────────────────────────
+
+export const registerHandler = asyncWrapper(async (req: Request, res: Response) => {
+    const { body } = registerSchema.parse({ body: req.body });
+
+    const { user, devVerificationToken } = await registerUser(body);
+
+    sendSuccess(
+        res,
+        {
+            user,
+            ...(devVerificationToken && { dev_verification_token: devVerificationToken }),
+        },
+        AUTH_CONSTANTS.MESSAGES.REGISTER_SUCCESS,
+        HTTP_STATUS.CREATED,
+    );
+});
 
 export const loginHandler = asyncWrapper(async (req: Request, res: Response) => {
     const { body: { email, password } } = loginSchema.parse({ body: req.body });

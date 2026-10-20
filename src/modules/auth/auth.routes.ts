@@ -9,12 +9,19 @@ import {
     verifyOtpHandler,
     resetPasswordHandler,
     changePasswordHandler,
+    registerHandler,
 } from './auth.controller';
 import { authMiddleware } from '../../middleware/authMiddleware';
 
 const router = Router();
 
 // ── Rate limiters ─────────────────────────────────────────────
+
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 10,
+    message: { success: false, message: 'Too many registration attempts, please try again later.' },
+});
 
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -37,6 +44,7 @@ const refreshLimiter = rateLimit({
 // ── Auth endpoints ────────────────────────────────────────────
 
 // Public
+router.post('/register', registerLimiter, registerHandler);
 router.post('/login', loginLimiter, loginHandler);
 router.post('/refresh-token', refreshLimiter, refreshTokenHandler);
 router.post('/logout', logoutHandler);

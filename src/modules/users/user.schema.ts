@@ -1,6 +1,6 @@
 import { z } from 'zod';
-
-const UserRoleEnum = z.enum(['ADMIN', 'MANAGER', 'STAFF', 'CUSTOMER']);
+import { UserRole } from '@prisma/client';
+const UserRoleEnum = z.nativeEnum(UserRole);
 
 // ── Create user ───────────────────────────────────────────────
 export const createUserSchema = z.object({

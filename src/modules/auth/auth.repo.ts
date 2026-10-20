@@ -1,6 +1,7 @@
 import prisma from '../../config/prismaClient';
 import { dbOperation } from '../../shared/utils/dbOperation';
 import { AUTH_CONSTANTS } from './auth.constants';
+import { UserRole } from '@prisma/client';
 
 const ENTITY = 'User';
 
@@ -67,6 +68,36 @@ export const AuthRepo = {
                 select: AUTH_CONSTANTS.SELECT,
             }),
             { operation: 'updatePassword', entity: ENTITY },
+        );
+    },
+
+    /**
+     * Creates a user together with its email-verification token.
+     * The nested create runs as a single DB transaction: both rows
+     * are saved, or neither is.
+     */
+    createUserWithVerificationToken: (
+        data: {
+            email: string;
+            name: string;
+            password: string; // already hashed
+            phone?: string;
+            role: UserRole;
+        },
+        tokenHash: string,
+        expiresAt: Date,
+    ) => {
+        return dbOperation(
+            () => prisma.users.create({
+                data: {
+                    ...data,
+                    email_tokens: {
+                        create: { token_hash: tokenHash, expires_at: expiresAt },
+                    },
+                },
+                select: AUTH_CONSTANTS.SELECT,
+            }),
+            { operation: 'createUserWithVerificationToken', entity: 'User' },
         );
     },
 

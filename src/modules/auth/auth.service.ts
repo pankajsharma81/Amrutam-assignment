@@ -1,13 +1,13 @@
+import { UserRole } from '@prisma/client';
 import { AuthRepo } from './auth.repo';
 import { AppError } from '../../core/errors/AppError';
 import { HTTP_STATUS } from '../../shared/constants';
 import { AUTH_CONSTANTS } from './auth.constants';
-import { verifyPassword } from './auth.tokens';
+import { hashPassword, verifyPassword } from './auth.tokens';
+import { env } from '../../config/env';
+import { generateToken, sha256 } from '../../shared/utils/token';
+import { sendVerificationEmail } from '../../shared/services/mailer';
 
-/**
- * Fetches an active user by email.
- * Throws AppError if the user does not exist.
- */
 export const getUserByEmail = async (email: string) => {
     const user = await AuthRepo.findByEmailWithPassword(email);
     if (!user) {
@@ -16,10 +16,6 @@ export const getUserByEmail = async (email: string) => {
     return user;
 };
 
-/**
- * Validates credentials and returns the authenticated user.
- * Throws AppError for invalid credentials or inactive accounts.
- */
 export const authenticateUser = async (email: string, password: string) => {
     const user = await getUserByEmail(email);
 
@@ -32,7 +28,41 @@ export const authenticateUser = async (email: string, password: string) => {
         throw new AppError(AUTH_CONSTANTS.MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
     }
 
-    // Return without exposing the password hash
     const { password: _pwd, ...safeUser } = user;
     return safeUser;
+};
+
+interface RegisterInput {
+    email: string;
+    password: string;
+    name: string;
+    phone?: string;
+    role: UserRole;
+}
+
+export const registerUser = async (input: RegisterInput) => {
+    const passwordHash = await hashPassword(input.password);
+
+    const token = generateToken();
+    const expiresAt = new Date(
+        Date.now() + AUTH_CONSTANTS.EMAIL_VERIFICATION_TTL_HOURS * 60 * 60 * 1000,
+    );
+
+    const user = await AuthRepo.createUserWithVerificationToken(
+        {
+            email: input.email,
+            name: input.name,
+            password: passwordHash,
+            phone: input.phone,
+            role: input.role,
+        },
+        sha256(token),
+        expiresAt,
+    );
+
+    void sendVerificationEmail(user.email, token);
+
+    const exposeToken = env.NODE_ENV === 'development' || env.NODE_ENV === 'test';
+
+    return { user, devVerificationToken: exposeToken ? token : undefined };
 };

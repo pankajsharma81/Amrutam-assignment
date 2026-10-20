@@ -2,6 +2,7 @@ import { env } from '../../config/env';
 
 export const AUTH_CONSTANTS = {
     SALT_ROUNDS: env.SALT_ROUNDS,
+    EMAIL_VERIFICATION_TTL_HOURS: 24,
 
     // Account lockout (brute-force protection)
     MAX_FAILED_LOGINS: 5,
@@ -41,9 +42,13 @@ export const AUTH_CONSTANTS = {
         uuid: true,
         email: true,
         name: true,
+        phone: true,
         role: true,
         is_active: true,
+        email_verified: true,
+        mfa_enabled: true,
         created_at: true,
         updated_at: true,
     },
+    
 } as const;
