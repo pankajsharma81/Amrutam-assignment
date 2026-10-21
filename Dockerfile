@@ -16,8 +16,9 @@ COPY prisma ./prisma
 RUN npm ci --omit=dev && npx prisma generate
 COPY --from=builder /app/dist ./dist
 RUN mkdir -p logs && chown node:node logs
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s \
   CMD wget -qO- http://localhost:3000/v1/health || exit 1
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/app.js"]
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node dist/app.js"]
