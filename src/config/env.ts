@@ -35,6 +35,7 @@ const envSchema = z.object({
     EMAIL_SENDER: z.string().email().default('noreply@amrutam.local'),
 
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().default(''),
+    METRICS_TOKEN: z.string().min(16).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

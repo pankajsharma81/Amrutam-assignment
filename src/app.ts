@@ -13,6 +13,8 @@ import { PrismaProvider } from './config/prismaClient';
 import { setupSwagger } from './config/swagger';
 import { RawBodyRequest } from './types';
 import { requestId } from './middleware/requestId';
+import { metricsMiddleware } from './middleware/metrics';
+import { registry } from './shared/metrics';
 
 
 const app = express();
@@ -30,6 +32,16 @@ app.use(cors({
     credentials: true,
 }));
 app.use(requestId);
+app.use(metricsMiddleware);
+
+app.get('/metrics', async (req, res) => {
+    if (env.METRICS_TOKEN && req.get('authorization') !== `Bearer ${env.METRICS_TOKEN}`) {
+        res.status(401).end();
+        return;
+    }
+    res.set('Content-Type', registry.contentType);
+    res.end(await registry.metrics());
+});
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,

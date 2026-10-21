@@ -1,4 +1,4 @@
-import { hashPassword, verifyPassword, generateTokenPair } from '../../../src/modules/management/auth/auth.tokens';
+import { hashPassword, verifyPassword, generateTokenPair } from '../../../src/modules/auth/auth.tokens';
 
 describe('Auth Service — hashPassword / verifyPassword', () => {
     it('should hash and verify a password correctly', async () => {
