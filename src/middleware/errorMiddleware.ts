@@ -59,12 +59,19 @@ export const errorMiddleware = (
         statusCode = HTTP_STATUS.UNAUTHORIZED;
         message = 'Invalid token';
         errorDetails = AUTH_ERROR_CODES.INVALID_TOKEN;
+    } else if ((err as { type?: string }).type === 'entity.parse.failed') {
+        statusCode = HTTP_STATUS.BAD_REQUEST;
+        message = 'Invalid JSON body';
+    } else if ((err as { type?: string }).type === 'entity.too.large') {
+        statusCode = HTTP_STATUS.PAYLOAD_TOO_LARGE;
+        message = 'Request body too large';
     }
 
     res.status(statusCode).json({
         success: false,
         message,
         error: errorDetails,
+        request_id: req.get('x-request-id'),
         stack: env.NODE_ENV === 'development' ? err.stack : undefined,
     });
 };

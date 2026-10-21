@@ -12,11 +12,29 @@ import { asyncWrapper } from '../../shared/utils/asyncWrapper';
 import { requireUser } from '../../shared/utils/requireUser';
 import { sendSuccess } from '../../shared/utils/apiResponse';
 import { HTTP_STATUS, RESPONSE_MESSAGES } from '../../shared/constants';
+import { audit } from '../../shared/utils/audit';
 
 export const createDoctorHandler = asyncWrapper(async (req: AuthenticatedRequest, res: Response) => {
     const { body } = createDoctorSchema.parse({ body: req.body });
-    const doctor = await DoctorService.create(requireUser(req), body);
+    const actor = requireUser(req);
+    const doctor = await DoctorService.create(actor, body);
+    await audit(req, { actor, action: 'DOCTOR_PROFILE_CREATED', resource: 'doctor', resourceId: doctor.uuid });
     sendSuccess(res, doctor, RESPONSE_MESSAGES.CREATED, HTTP_STATUS.CREATED);
+});
+
+export const verifyDoctorHandler = asyncWrapper(async (req: AuthenticatedRequest, res: Response) => {
+    const { params: { uuid }, body: { verified } } = verifyDoctorSchema.parse({
+        params: req.params,
+        body: req.body,
+    });
+    const doctor = await DoctorService.verify(uuid, verified);
+    await audit(req, {
+        actor: requireUser(req),
+        action: verified ? 'DOCTOR_VERIFIED' : 'DOCTOR_UNVERIFIED',
+        resource: 'doctor',
+        resourceId: uuid,
+    });
+    sendSuccess(res, doctor, RESPONSE_MESSAGES.UPDATED);
 });
 
 export const searchDoctorsHandler = asyncWrapper(async (req: AuthenticatedRequest, res: Response) => {
@@ -37,14 +55,5 @@ export const updateDoctorHandler = asyncWrapper(async (req: AuthenticatedRequest
         body: req.body,
     });
     const doctor = await DoctorService.update(requireUser(req), uuid, body);
-    sendSuccess(res, doctor, RESPONSE_MESSAGES.UPDATED);
-});
-
-export const verifyDoctorHandler = asyncWrapper(async (req: AuthenticatedRequest, res: Response) => {
-    const { params: { uuid }, body: { verified } } = verifyDoctorSchema.parse({
-        params: req.params,
-        body: req.body,
-    });
-    const doctor = await DoctorService.verify(uuid, verified);
     sendSuccess(res, doctor, RESPONSE_MESSAGES.UPDATED);
 });

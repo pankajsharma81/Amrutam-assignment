@@ -12,6 +12,7 @@ import { sendSuccess } from '../../shared/utils/apiResponse';
 import { HTTP_STATUS, RESPONSE_MESSAGES } from '../../shared/constants';
 import { AppError } from '../../core/errors/AppError';
 import { USER_CONSTANTS } from './user.constants';
+import { audit } from '../../shared/utils/audit';
 
 const currentUser = (req: AuthenticatedRequest) => {
     if (!req.user) {
@@ -48,12 +49,22 @@ export const updateRoleHandler = asyncWrapper(async (req: AuthenticatedRequest, 
         params: req.params,
         body: req.body,
     });
-    const user = await UserService.updateRole(currentUser(req).uuid, uuid, role);
+    const actor = currentUser(req);
+    const user = await UserService.updateRole(actor.uuid, uuid, role);
+    await audit(req, {
+        actor,
+        action: 'USER_ROLE_CHANGED',
+        resource: 'user',
+        resourceId: uuid,
+        metadata: { new_role: role },
+    });
     sendSuccess(res, user, USER_CONSTANTS.MESSAGES.UPDATED);
 });
 
 export const deleteUserHandler = asyncWrapper(async (req: AuthenticatedRequest, res: Response) => {
     const { params: { uuid } } = getUserSchema.parse({ params: req.params });
-    await UserService.delete(currentUser(req).uuid, uuid);
+    const actor = currentUser(req);
+    await UserService.delete(actor.uuid, uuid);
+    await audit(req, { actor, action: 'USER_DELETED', resource: 'user', resourceId: uuid });
     sendSuccess(res, null, USER_CONSTANTS.MESSAGES.DELETED);
 });

@@ -90,7 +90,7 @@ export const idempotency = async (
                       where,
                       data: {
                           response_status: res.statusCode,
-                          response_body: body as Prisma.InputJsonValue,
+                          response_body: (res.locals.idempotencyBody ?? body) as Prisma.InputJsonValue,
                       },
                   })
                 : prisma.idempotency_keys.deleteMany({ where: { user_id: user.id, key } });

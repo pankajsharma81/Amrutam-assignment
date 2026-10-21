@@ -12,18 +12,31 @@ import { requestLogger } from './utils/logger';
 import { PrismaProvider } from './config/prismaClient';
 import { setupSwagger } from './config/swagger';
 import { RawBodyRequest } from './types';
+import { requestId } from './middleware/requestId';
+
 
 const app = express();
 const PORT = env.PORT;
+app.set('trust proxy', env.TRUST_PROXY);
 
 app.use(helmet());
-app.use(cors());
+const allowedOrigins = env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean);
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(null, false);
+    },
+    credentials: true,
+}));
+app.use(requestId);
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.path === '/v1/payments/webhook',
     message: {
         success: false,
         message: 'Too many requests, please try again later.',

@@ -5,6 +5,7 @@ const envSchema = z.object({
     
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     PORT: z.coerce.number().int().positive().default(3000),
+    TRUST_PROXY: z.coerce.number().int().min(0).default(0),
     LOG_LEVEL: z
         .enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'])
         .optional(),
@@ -48,6 +49,29 @@ if (!parsed.success) {
 
     console.error('\nPlease check your .env file and fix the above errors.\n');
     process.exit(1);
+}
+
+if (parsed.data.NODE_ENV === 'production') {
+    const d = parsed.data;
+    const problems: string[] = [];
+
+    if (/^0+$/.test(d.ENCRYPTION_KEY)) problems.push('ENCRYPTION_KEY is all zeros');
+    if (d.JWT_ACCESS_SECRET === d.JWT_REFRESH_SECRET) problems.push('JWT secrets must differ');
+
+    const secrets = {
+        JWT_ACCESS_SECRET: d.JWT_ACCESS_SECRET,
+        JWT_REFRESH_SECRET: d.JWT_REFRESH_SECRET,
+        PAYMENT_WEBHOOK_SECRET: d.PAYMENT_WEBHOOK_SECRET,
+    };
+    for (const [name, value] of Object.entries(secrets)) {
+        if (value.toLowerCase().includes('change_me')) problems.push(`${name} is still a placeholder`);
+    }
+
+    if (problems.length > 0) {
+        console.error('\n❌  Unsafe production configuration:\n');
+        problems.forEach((p) => console.error(`  • ${p}`));
+        process.exit(1);
+    }
 }
 
 export const env = Object.freeze(parsed.data);
