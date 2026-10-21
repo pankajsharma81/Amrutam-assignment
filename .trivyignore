@@ -1,0 +1,3 @@
+# Prisma CLI config loader (deepmerge-ts), used only by "prisma migrate deploy" at container start.
+# Not reachable from request handling. Fix requires Prisma 7 (major upgrade); see docs/security.md section 5.
+CVE-2026-40345 exp:2026-12-31
