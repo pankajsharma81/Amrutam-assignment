@@ -8,6 +8,7 @@ import { consultationPrescriptionRoutes, prescriptionRoutes } from '../modules/p
 import { paymentRoutes } from '../modules/payments';
 import prisma from '../config/prismaClient';
 import { getRedisClient } from '../config/redis';
+import { adminRoutes } from '../modules/admin';
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use('/prescriptions', prescriptionRoutes);
 router.use('/consultations', consultationRoutes);
 
 router.use('/payments', paymentRoutes);
+router.use('/admin', adminRoutes);
 
 router.get('/health', (_req, res) => {
     res.json({ success: true, message: 'OK', timestamp: new Date().toISOString() });
