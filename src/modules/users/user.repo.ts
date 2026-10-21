@@ -74,7 +74,7 @@ export const UserRepo = {
                     uuid: payload.uuid,
                     email: payload.email,
                     name: payload.name,
-                    password: payload.password, // already hashed by service
+                    password: payload.password, 
                     role: payload.role,
                     phone: payload.phone,
                 },

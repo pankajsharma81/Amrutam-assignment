@@ -1,8 +1,5 @@
 import { z } from 'zod';
 
-// ── Reusable field rules ──────────────────────────────────────
-// Email is normalised (trim + lowercase) so "A@x.com" and "a@x.com"
-// can never become two different accounts.
 const emailSchema = z
     .string()
     .trim()
@@ -10,7 +7,6 @@ const emailSchema = z
     .email('Invalid email address')
     .max(254);
 
-// bcrypt only uses the first 72 bytes, so cap the length.
 const passwordSchema = z
     .string()
     .min(8, 'Password must be at least 8 characters')
@@ -19,9 +15,6 @@ const passwordSchema = z
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number');
 
-// ── Register ──────────────────────────────────────────────────
-// ADMIN is deliberately NOT allowed here (privilege escalation).
-// .strict() rejects unknown keys such as is_active / email_verified.
 export const registerSchema = z.object({
     body: z
         .object({
@@ -38,7 +31,6 @@ export const registerSchema = z.object({
         .strict(),
 });
 
-// ── Login ─────────────────────────────────────────────────────
 export const loginSchema = z.object({
     body: z.object({
         email: emailSchema,
@@ -46,21 +38,18 @@ export const loginSchema = z.object({
     }),
 });
 
-// ── Refresh token ─────────────────────────────────────────────
 export const refreshTokenSchema = z.object({
     body: z.object({
         refresh_token: z.string().min(10, 'Refresh token is required'),
     }),
 });
 
-// ── Logout ────────────────────────────────────────────────────
 export const logoutSchema = z.object({
     body: z.object({
         refresh_token: z.string().min(10, 'Refresh token is required'),
     }),
 });
 
-// ── Password reset flow ───────────────────────────────────────
 export const forgotPasswordSchema = z.object({
     body: z.object({
         email: emailSchema,
@@ -81,7 +70,6 @@ export const resetPasswordSchema = z.object({
     }),
 });
 
-// ── Change password (authenticated) ──────────────────────────
 export const changePasswordSchema = z.object({
     body: z.object({
         current_password: z.string().min(1, 'Current password is required').max(72),

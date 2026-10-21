@@ -8,9 +8,6 @@ interface ApiResponse<T> {
     error?: unknown;
 }
 
-/**
- * Send a standardised success response.
- */
 export const sendSuccess = <T>(
     res: Response,
     data: T,
@@ -25,9 +22,6 @@ export const sendSuccess = <T>(
     return res.status(statusCode).json(response);
 };
 
-/**
- * Send a standardised error response.
- */
 export const sendError = (
     res: Response,
     message: string = RESPONSE_MESSAGES.SERVER_ERROR,

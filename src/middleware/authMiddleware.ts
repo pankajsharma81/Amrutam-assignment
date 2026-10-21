@@ -6,7 +6,6 @@ import { AppError } from '../core/errors/AppError';
 import { HTTP_STATUS } from '../shared/constants';
 import { AUTH_ERROR_CODES } from '../shared/constants/authErrorCodes';
 
-// ── Token payload shapes ──────────────────────────────────────
 
 interface AdminTokenPayload extends JwtPayload {
     admin_id: number;
@@ -22,12 +21,7 @@ interface UserTokenPayload extends JwtPayload {
     typ?: 'access' | 'refresh';
 }
 
-// ── Superadmin auth ───────────────────────────────────────────
 
-/**
- * Validates Bearer token for superadmin routes.
- * Populates `req.admin` on success.
- */
 export const adminAuthMiddleware = (
     req: AdminAuthRequest,
     res: Response,
@@ -60,12 +54,7 @@ export const adminAuthMiddleware = (
     next(new AppError('Authorization header missing or malformed', HTTP_STATUS.UNAUTHORIZED, AUTH_ERROR_CODES.MISSING_AUTH_HEADER));
 };
 
-// ── User auth ─────────────────────────────────────────────────
 
-/**
- * Validates Bearer token for management/customer routes.
- * Populates `req.user` on success.
- */
 export const authMiddleware = (
     req: AuthenticatedRequest,
     res: Response,
@@ -78,7 +67,6 @@ export const authMiddleware = (
         try {
             const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET, { algorithms: ['HS256'] }) as UserTokenPayload;
 
-            // Reject refresh tokens against access-protected routes
             if (decoded.typ && decoded.typ !== 'access') {
                 next(new AppError('Invalid token type for this endpoint', HTTP_STATUS.UNAUTHORIZED, AUTH_ERROR_CODES.INVALID_TOKEN_TYPE));
                 return;
@@ -104,14 +92,7 @@ export const authMiddleware = (
     next(new AppError('Authorization header missing or malformed', HTTP_STATUS.UNAUTHORIZED, AUTH_ERROR_CODES.MISSING_AUTH_HEADER));
 };
 
-// ── Role guard ────────────────────────────────────────────────
 
-/**
- * Middleware factory: restricts access to specific user roles.
- *
- * Usage:
- *   router.get('/admin-only', authMiddleware, requireRole('ADMIN', 'SUPER_ADMIN'), handler);
- */
 export const requireRole = (...roles: string[]) => {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         if (!req.user || !roles.includes(req.user.user_type)) {

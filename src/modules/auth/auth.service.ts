@@ -1,4 +1,5 @@
-import { UserRole } from '@prisma/client';
+import bcrypt from 'bcrypt';
+import { users, UserRole } from '@prisma/client';
 import { AuthRepo } from './auth.repo';
 import { AppError } from '../../core/errors/AppError';
 import { HTTP_STATUS } from '../../shared/constants';
@@ -8,28 +9,52 @@ import { env } from '../../config/env';
 import { generateToken, sha256 } from '../../shared/utils/token';
 import { sendVerificationEmail } from '../../shared/services/mailer';
 
-export const getUserByEmail = async (email: string) => {
+const DUMMY_HASH = bcrypt.hashSync('dummy-password-for-timing', env.SALT_ROUNDS);
+
+const toPublicUser = (user: users) => ({
+    uuid: user.uuid,
+    email: user.email,
+    name: user.name,
+    phone: user.phone,
+    role: user.role,
+    is_active: user.is_active,
+    email_verified: user.email_verified,
+    mfa_enabled: user.mfa_enabled,
+    created_at: user.created_at,
+    updated_at: user.updated_at,
+});
+
+export const loginUser = async (email: string, password: string) => {
     const user = await AuthRepo.findByEmailWithPassword(email);
+
     if (!user) {
+        await verifyPassword(password, DUMMY_HASH);
         throw new AppError(AUTH_CONSTANTS.MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
     }
-    return user;
-};
 
-export const authenticateUser = async (email: string, password: string) => {
-    const user = await getUserByEmail(email);
+    if (user.locked_until && user.locked_until > new Date()) {
+        throw new AppError(AUTH_CONSTANTS.MESSAGES.ACCOUNT_LOCKED, HTTP_STATUS.TOO_MANY_REQUESTS);
+    }
+
+    const isValid = await verifyPassword(password, user.password);
+    if (!isValid) {
+        await AuthRepo.recordFailedLogin(
+            user.id,
+            AUTH_CONSTANTS.MAX_FAILED_LOGINS,
+            AUTH_CONSTANTS.LOCKOUT_MINUTES,
+        );
+        throw new AppError(AUTH_CONSTANTS.MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
+    }
 
     if (!user.is_active) {
         throw new AppError(AUTH_CONSTANTS.MESSAGES.INACTIVE_ACCOUNT, HTTP_STATUS.FORBIDDEN);
     }
 
-    const isValid = await verifyPassword(password, user.password ?? '');
-    if (!isValid) {
-        throw new AppError(AUTH_CONSTANTS.MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
+    if (!user.mfa_enabled) {
+        await AuthRepo.recordSuccessfulLogin(user.id);
     }
-
-    const { password: _pwd, ...safeUser } = user;
-    return safeUser;
+    
+    return { user: toPublicUser(user), internalId: user.id, mfaRequired: user.mfa_enabled };
 };
 
 interface RegisterInput {

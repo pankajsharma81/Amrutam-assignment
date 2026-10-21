@@ -18,10 +18,6 @@ const logger = winston.createLogger({
     ],
 });
 
-/**
- * Structured error logger.
- * Call from catch blocks for centralised, searchable error records.
- */
 export const logError = (
     feature: string,
     message: string,
@@ -35,17 +31,10 @@ export const logError = (
     });
 };
 
-/**
- * Structured info logger.
- */
 export const logInfo = (feature: string, message: string, meta?: Record<string, unknown>) => {
     logger.info(message, { feature, ...meta });
 };
 
-/**
- * Express request logging middleware (attach after morgan).
- * Logs structured request details at the info level.
- */
 export const requestLogger = (req: Request, _res: Response, next: NextFunction) => {
     logger.http(`${req.method} ${req.path}`, {
         ip: req.ip,

@@ -26,7 +26,6 @@ export const UserService = {
     },
 
     create: async (payload: CreateUserPayload) => {
-        // Check for duplicate email
         const existing = await UserRepo.findByEmail(payload.email);
         if (existing) {
             throw new AppError(USER_CONSTANTS.MESSAGES.ALREADY_EXISTS, HTTP_STATUS.CONFLICT);

@@ -9,7 +9,7 @@ const getTransporter = (): Transporter | null => {
 
     if (!transporter) {
         transporter = nodemailer.createTransport({
-            service: 'gmail', // change host/port here for another SMTP provider
+            service: 'gmail',
             auth: { user: env.EMAIL, pass: env.EMAIL_PASSWORD },
         });
     }

@@ -3,7 +3,6 @@ import jwt, { SignOptions } from "jsonwebtoken";
 import { randomUUID } from "crypto";
 import { env } from "../../config/env";
 
-// ── Password helpers ──────────────────────────────────────────
 
 export const hashPassword = (plaintext: string): Promise<string> => {
   return bcrypt.hash(plaintext, env.SALT_ROUNDS);
@@ -17,7 +16,7 @@ export const verifyPassword = (
 };
 
 export const hashRefreshToken = (token: string): Promise<string> => {
-  return bcrypt.hash(token, 8); // lower rounds — tokens are long random strings
+  return bcrypt.hash(token, 8);
 };
 
 export const verifyRefreshTokenHash = (
@@ -27,7 +26,6 @@ export const verifyRefreshTokenHash = (
   return bcrypt.compare(token, hash);
 };
 
-// ── Token generation ──────────────────────────────────────────
 
 interface TokenPayload {
   id: number;

@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { UserRole } from '@prisma/client';
 const UserRoleEnum = z.nativeEnum(UserRole);
 
-// ── Create user ───────────────────────────────────────────────
 export const createUserSchema = z.object({
     body: z.object({
         email: z.string().email('Invalid email address'),
@@ -17,7 +16,6 @@ export const createUserSchema = z.object({
     }),
 });
 
-// ── Update user ───────────────────────────────────────────────
 export const updateUserSchema = z.object({
     params: z.object({
         uuid: z.string().uuid('Invalid UUID'),
@@ -30,14 +28,12 @@ export const updateUserSchema = z.object({
     }),
 });
 
-// ── Get user ──────────────────────────────────────────────────
 export const getUserSchema = z.object({
     params: z.object({
         uuid: z.string().uuid('Invalid UUID'),
     }),
 });
 
-// ── List users ────────────────────────────────────────────────
 export const listUsersSchema = z.object({
     query: z.object({
         page: z.coerce.number().int().positive().optional().default(1),

@@ -8,7 +8,6 @@ export const USER_CONSTANTS = {
         LISTED: 'Users retrieved successfully',
     },
 
-    /** Default Prisma SELECT for user public responses */
     SELECT: {
         uuid: true,
         email: true,

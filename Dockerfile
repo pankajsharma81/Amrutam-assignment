@@ -6,7 +6,6 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# ── Production image ──────────────────────────────────────────
 FROM node:20-alpine AS production
 
 WORKDIR /app

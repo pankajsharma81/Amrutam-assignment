@@ -21,10 +21,11 @@ const envSchema = z.object({
     REFRESH_TOKEN_EXPIRES_IN_DAYS: z.coerce.number().int().positive().default(7),
     SALT_ROUNDS: z.coerce.number().int().min(4).max(31).default(10),
     MFA_ISSUER: z.string().default('Amrutam'),
-
-
+    
+    
     ENCRYPTION_KEY: z.string().regex(/^[0-9a-fA-F]{64}$/, 'ENCRYPTION_KEY must be 64 hex chars'),
     ENCRYPTION_KEY_ID: z.string().default('k1'),
+    ENCRYPTION_PREVIOUS_KEYS: z.string().default(''),
    
     PAYMENT_WEBHOOK_SECRET: z.string().min(16),
  

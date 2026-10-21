@@ -17,7 +17,6 @@ class PrismaProvider {
                         : ['error'],
                 });
 
-                // Cache on global in non-prod to survive hot-reloads
                 if (env.NODE_ENV !== 'production') {
                     globalForPrisma.__prisma = PrismaProvider.instance;
                 }
@@ -36,10 +35,6 @@ class PrismaProvider {
     }
 }
 
-/**
- * Singleton Prisma client.
- * Usage: import prisma from '../../../config/prismaClient';
- */
 const prisma = PrismaProvider.getClient();
 
 export { PrismaProvider };

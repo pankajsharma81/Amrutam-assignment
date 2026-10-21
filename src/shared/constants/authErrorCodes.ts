@@ -1,7 +1,3 @@
-/**
- * Machine-readable error codes sent in the `error` field of API responses.
- * Clients should switch on these codes rather than parsing message strings.
- */
 export const AUTH_ERROR_CODES = {
     INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
     INVALID_TOKEN: 'INVALID_TOKEN',

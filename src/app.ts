@@ -1,7 +1,7 @@
 import express from 'express';
 import 'reflect-metadata';
 import 'dotenv/config';
-import { env } from './config/env';           // ← validates all env vars at startup
+import { env } from './config/env';
 import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
@@ -15,14 +15,11 @@ import { setupSwagger } from './config/swagger';
 const app = express();
 const PORT = env.PORT;
 
-// ─────────────────────────────────────────────
-// MIDDLEWARE
-// ─────────────────────────────────────────────
 app.use(helmet());
 app.use(cors());
 
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 15 * 60 * 1000,
     max: 100,
     standardHeaders: true,
     legacyHeaders: false,
@@ -38,26 +35,18 @@ app.use(requestLogger);
 app.use(express.json({ limit: '3mb' }));
 app.use(express.urlencoded({ extended: true, limit: '3mb' }));
 
-// Swagger docs (non-production only)
 if (env.NODE_ENV !== 'production') {
     setupSwagger(app);
 }
 
-// ─────────────────────────────────────────────
-// ROUTES
-// ─────────────────────────────────────────────
 app.use('/v1', routes);
 app.use(errorMiddleware);
 
-// ─────────────────────────────────────────────
-// START SERVER
-// ─────────────────────────────────────────────
 const server = app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`📄 Swagger docs: http://localhost:${PORT}/api-docs`);
 });
 
-// ── Graceful shutdown ─────────────────────────────────────────
 let shuttingDown = false;
 const gracefulShutdown = (signal: string) => {
     if (shuttingDown) return;
@@ -79,7 +68,6 @@ const gracefulShutdown = (signal: string) => {
     });
 };
 
-// Register signals only once to prevent memory leaks
 if (!(global as any).__shutdown_registered__) {
     (global as any).__shutdown_registered__ = true;
     process.once('SIGTERM', () => gracefulShutdown('SIGTERM'));

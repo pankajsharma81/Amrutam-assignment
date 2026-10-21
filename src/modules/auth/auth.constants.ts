@@ -4,7 +4,6 @@ export const AUTH_CONSTANTS = {
     SALT_ROUNDS: env.SALT_ROUNDS,
     EMAIL_VERIFICATION_TTL_HOURS: 24,
 
-    // Account lockout (brute-force protection)
     MAX_FAILED_LOGINS: 5,
     LOCKOUT_MINUTES: 15,
 
@@ -17,7 +16,7 @@ export const AUTH_CONSTANTS = {
         OTP_VERIFIED: 'OTP verified successfully. You can now reset your password.',
         PASSWORD_RESET_SUCCESS: 'Password has been reset successfully.',
         PASSWORD_CHANGED: 'Password changed successfully.',
-        EMAIL_NOT_FOUND: 'No account found with this email address.', // TODO: remove after controller review
+        EMAIL_NOT_FOUND: 'No account found with this email address.',
         USER_NOT_FOUND: 'User not found',
         INCORRECT_PASSWORD: 'Current password is incorrect.',
         EMAIL_NOT_VERIFIED: 'Email not verified. Please verify OTP first.',
@@ -25,17 +24,16 @@ export const AUTH_CONSTANTS = {
         SESSION_REVOKED: 'Session revoked. Please login again.',
         LOGOUT_SUCCESS: 'Logged out successfully.',
 
-        // Registration / email verification
         REGISTER_SUCCESS: 'Registration successful. Please verify your email.',
         EMAIL_ALREADY_EXISTS: 'An account with this email already exists.',
         EMAIL_VERIFIED: 'Email verified successfully.',
         VERIFICATION_TOKEN_INVALID: 'Invalid or expired verification token.',
 
-        // MFA (TOTP)
         MFA_REQUIRED: 'MFA code required.',
         MFA_INVALID_CODE: 'Invalid MFA code.',
         MFA_ENABLED: 'MFA enabled successfully.',
         MFA_ALREADY_ENABLED: 'MFA is already enabled for this account.',
+        MFA_TOKEN_INVALID: 'Invalid or expired MFA token.',
     },
 
     SELECT: {

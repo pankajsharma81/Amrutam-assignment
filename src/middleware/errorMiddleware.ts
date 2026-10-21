@@ -23,7 +23,6 @@ export const errorMiddleware = (
     let message: string = RESPONSE_MESSAGES.SERVER_ERROR;
     let errorDetails: unknown = null;
 
-    // ── AppError (Trusted operational errors) ──────────────────
     if (err instanceof AppError) {
         statusCode = err.statusCode;
         message = err.message;
@@ -33,7 +32,6 @@ export const errorMiddleware = (
             errorDetails = err.details ?? AUTH_ERROR_CODES.INVALID_TOKEN;
         }
     }
-    // ── Zod Validation Errors ───────────────────────────────────
     else if (err instanceof ZodError) {
         statusCode = HTTP_STATUS.BAD_REQUEST;
         message = err.errors
@@ -44,7 +42,6 @@ export const errorMiddleware = (
             message: e.message,
         }));
     }
-    // ── Prisma Errors ───────────────────────────────────────────
     else if (err instanceof Prisma.PrismaClientKnownRequestError) {
         if (err.code === 'P2002') {
             statusCode = HTTP_STATUS.CONFLICT;
@@ -54,7 +51,6 @@ export const errorMiddleware = (
             message = RESPONSE_MESSAGES.NOT_FOUND;
         }
     }
-    // ── JWT Errors ──────────────────────────────────────────────
     else if (err.name === 'TokenExpiredError') {
         statusCode = HTTP_STATUS.UNAUTHORIZED;
         message = 'Token expired';

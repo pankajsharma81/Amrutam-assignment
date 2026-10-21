@@ -8,16 +8,6 @@ interface DbOperationOptions {
     entity: string;
 }
 
-/**
- * Wraps a Prisma call with structured error handling and logging.
- * Maps Prisma error codes to meaningful AppError instances.
- *
- * Usage:
- *   return dbOperation(
- *     () => prisma.user.findMany(),
- *     { operation: 'findMany', entity: 'User' }
- *   );
- */
 export async function dbOperation<T>(
     fn: () => Promise<T>,
     options: DbOperationOptions,
@@ -28,7 +18,6 @@ export async function dbOperation<T>(
         const { operation, entity } = options;
         const feature = `DB_${entity.toUpperCase()}_${operation.toUpperCase()}`;
 
-        // Re-throw operational AppErrors unchanged
         if (error instanceof AppError) {
             throw error;
         }
