@@ -1,0 +1,1 @@
+export { doctorSlotRoutes, slotRoutes } from './slot.routes';
