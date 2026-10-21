@@ -179,12 +179,14 @@ model consultations {
 }
 
 model prescriptions {
-  id               Int      @id @default(autoincrement())
-  uuid             String   @unique @default(uuid())
+  id               Int       @id @default(autoincrement())
+  uuid             String    @unique @default(uuid())
   consultation_id  Int
   medications_enc  String
   instructions_enc String?
-  created_at       DateTime @default(now())
+  revoked_at       DateTime?
+  revoked_reason   String?
+  created_at       DateTime  @default(now())
 
   consultation consultations @relation(fields: [consultation_id], references: [id])
 
