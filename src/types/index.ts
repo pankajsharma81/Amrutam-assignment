@@ -20,3 +20,7 @@ export interface AuthenticatedRequest extends Request {
 export interface AdminAuthRequest extends Request {
     admin?: AuthAdmin;
 }
+
+export interface RawBodyRequest extends Request {
+    rawBody?: Buffer;
+}

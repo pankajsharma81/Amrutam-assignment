@@ -11,6 +11,7 @@ import { errorMiddleware } from './middleware/errorMiddleware';
 import { requestLogger } from './utils/logger';
 import { PrismaProvider } from './config/prismaClient';
 import { setupSwagger } from './config/swagger';
+import { RawBodyRequest } from './types';
 
 const app = express();
 const PORT = env.PORT;
@@ -32,7 +33,12 @@ const limiter = rateLimit({
 app.use(limiter);
 app.use(morgan('dev'));
 app.use(requestLogger);
-app.use(express.json({ limit: '3mb' }));
+app.use(express.json({
+    limit: '3mb',
+    verify: (req, _res, buf) => {
+        (req as RawBodyRequest).rawBody = buf;
+    },
+}));
 app.use(express.urlencoded({ extended: true, limit: '3mb' }));
 
 if (env.NODE_ENV !== 'production') {

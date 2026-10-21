@@ -5,6 +5,7 @@ import { doctorRoutes } from '../modules/doctors';
 import { doctorSlotRoutes, slotRoutes } from '../modules/slots';
 import { consultationRoutes } from '../modules/consultations';
 import { consultationPrescriptionRoutes, prescriptionRoutes } from '../modules/prescriptions';
+import { paymentRoutes } from '../modules/payments';
 
 const router = Router();
 
@@ -20,6 +21,8 @@ router.use('/consultations', consultationRoutes);
 router.use('/consultations/:uuid/prescription', consultationPrescriptionRoutes);
 router.use('/prescriptions', prescriptionRoutes);
 router.use('/consultations', consultationRoutes);
+
+router.use('/payments', paymentRoutes);
 
 router.get('/health', (_req, res) => {
     res.json({ success: true, message: 'OK', timestamp: new Date().toISOString() });
