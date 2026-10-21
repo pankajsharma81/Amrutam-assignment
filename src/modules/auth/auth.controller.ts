@@ -7,6 +7,8 @@ import {
     refreshTokenSchema,
     logoutSchema,
     registerSchema,
+    mfaConfirmSchema,
+    mfaVerifySchema,
 } from './auth.schema';
 import {
     generateTokenPair,
@@ -15,7 +17,7 @@ import {
     verifyPassword,
     verifyRefreshTokenHash,
 } from './auth.tokens';
-import { loginUser, registerUser } from './auth.service';
+import { confirmMfa, enrollMfa, loginUser, registerUser, verifyMfaLogin } from './auth.service';
 import { AuthRepo } from './auth.repo';
 import { asyncWrapper } from '../../shared/utils/asyncWrapper';
 import { sendSuccess } from '../../shared/utils/apiResponse';
@@ -24,6 +26,8 @@ import { AUTH_ERROR_CODES } from '../../shared/constants/authErrorCodes';
 import { AUTH_CONSTANTS } from './auth.constants';
 import { AppError } from '../../core/errors/AppError';
 import { env } from '../../config/env';
+import { UserRole } from '@prisma/client';
+import { requireUser } from '../../shared/utils/requireUser';
 
 interface RefreshTokenPayload extends JwtPayload {
     sub: string;
@@ -221,4 +225,50 @@ export const changePasswordHandler = asyncWrapper(async (req: AuthenticatedReque
     await AuthRepo.revokeAllSessionsByUserId(req.user.id);
 
     sendSuccess(res, null, AUTH_CONSTANTS.MESSAGES.PASSWORD_CHANGED);
+});
+
+const issueSession = async (
+    req: Request,
+    internalId: number,
+    user: { uuid: string; role: UserRole },
+) => {
+    const tokenPair = generateTokenPair({
+        id: internalId,
+        uuid: user.uuid,
+        user_type: user.role,
+    });
+
+    const tokenHash = await hashRefreshToken(tokenPair.refresh_token);
+    await AuthRepo.createRefreshSession(
+        internalId,
+        tokenPair.sid,
+        tokenHash,
+        req.ip,
+        req.get('user-agent'),
+    );
+
+    return {
+        access_token: tokenPair.access_token,
+        refresh_token: tokenPair.refresh_token,
+        token_type: tokenPair.token_type,
+        expires_in: tokenPair.expires_in,
+    };
+};
+
+export const mfaEnrollHandler = asyncWrapper(async (req: AuthenticatedRequest, res: Response) => {
+    const result = await enrollMfa(requireUser(req).uuid);
+    sendSuccess(res, result);
+});
+
+export const mfaConfirmHandler = asyncWrapper(async (req: AuthenticatedRequest, res: Response) => {
+    const { body } = mfaConfirmSchema.parse({ body: req.body });
+    await confirmMfa(requireUser(req).uuid, body.code);
+    sendSuccess(res, null, AUTH_CONSTANTS.MESSAGES.MFA_ENABLED);
+});
+
+export const mfaVerifyHandler = asyncWrapper(async (req: Request, res: Response) => {
+    const { body } = mfaVerifySchema.parse({ body: req.body });
+    const { user, internalId } = await verifyMfaLogin(body.mfa_token, body.code);
+    const session = await issueSession(req, internalId, user);
+    sendSuccess(res, { ...session, user });
 });

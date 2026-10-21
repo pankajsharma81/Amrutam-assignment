@@ -76,3 +76,16 @@ export const changePasswordSchema = z.object({
         new_password: passwordSchema,
     }),
 });
+
+const otpCode = z.string().regex(/^\d{6}$/, 'Code must be 6 digits');
+
+export const mfaVerifySchema = z.object({
+    body: z.object({
+        mfa_token: z.string().min(10, 'MFA token is required'),
+        code: otpCode,
+    }),
+});
+
+export const mfaConfirmSchema = z.object({
+    body: z.object({ code: otpCode }),
+});
