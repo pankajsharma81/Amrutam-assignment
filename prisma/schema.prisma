@@ -13,6 +13,27 @@ enum UserRole {
   ADMIN
 }
 
+enum SlotStatus {
+  AVAILABLE
+  BOOKED
+  BLOCKED
+}
+
+enum ConsultationStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
 model users {
   id                 Int       @id @default(autoincrement())
   uuid               String    @unique @default(uuid())
@@ -38,6 +59,10 @@ model users {
 
   refresh_sessions user_refresh_sessions[]
   email_tokens     email_verification_tokens[]
+
+  profile          profiles?
+  doctor           doctors?
+  consultations    consultations[] @relation("PatientConsultations")
 
   @@index([role])
 }
@@ -70,4 +95,147 @@ model email_verification_tokens {
   user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
+}
+
+model profiles {
+  id            Int       @id @default(autoincrement())
+  user_id       Int       @unique
+  date_of_birth DateTime?
+  gender        String?
+  address_enc   String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model doctors {
+  id               Int       @id @default(autoincrement())
+  uuid             String    @unique @default(uuid())
+  user_id          Int       @unique
+  specialization   String
+  license_number   String    @unique
+  experience_years Int       @default(0)
+  consultation_fee Decimal   @db.Decimal(10, 2)
+  languages        String[]
+  bio              String?
+  rating           Float     @default(0)
+  verified         Boolean   @default(false)
+  verified_at      DateTime?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  user          users                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  slots         availability_slots[]
+  consultations consultations[]
+
+  @@index([specialization])
+  @@index([verified, specialization])
+}
+
+model availability_slots {
+  id         Int        @id @default(autoincrement())
+  uuid       String     @unique @default(uuid())
+  doctor_id  Int
+  start_time DateTime
+  end_time   DateTime
+  status     SlotStatus @default(AVAILABLE)
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+
+  doctor        doctors         @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  consultations consultations[]
+
+  @@unique([doctor_id, start_time])
+  @@index([doctor_id, status, start_time])
+}
+
+model consultations {
+  id              Int                @id @default(autoincrement())
+  uuid            String             @unique @default(uuid())
+  patient_id      Int
+  doctor_id       Int
+  slot_id         Int
+  status          ConsultationStatus @default(PENDING_PAYMENT)
+  scheduled_start DateTime
+  scheduled_end   DateTime
+  started_at      DateTime?
+  completed_at    DateTime?
+  cancelled_at    DateTime?
+  cancel_reason   String?
+  notes_enc       String?
+  created_at      DateTime           @default(now())
+  updated_at      DateTime           @updatedAt
+
+  patient       users              @relation("PatientConsultations", fields: [patient_id], references: [id])
+  doctor        doctors            @relation(fields: [doctor_id], references: [id])
+  slot          availability_slots @relation(fields: [slot_id], references: [id])
+  prescriptions prescriptions[]
+  payments      payments[]
+
+  @@index([patient_id, created_at])
+  @@index([doctor_id, scheduled_start])
+  @@index([status, created_at])
+}
+
+model prescriptions {
+  id               Int      @id @default(autoincrement())
+  uuid             String   @unique @default(uuid())
+  consultation_id  Int
+  medications_enc  String
+  instructions_enc String?
+  created_at       DateTime @default(now())
+
+  consultation consultations @relation(fields: [consultation_id], references: [id])
+
+  @@index([consultation_id])
+}
+
+model payments {
+  id              Int           @id @default(autoincrement())
+  uuid            String        @unique @default(uuid())
+  consultation_id Int
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("INR")
+  status          PaymentStatus @default(PENDING)
+  provider_ref    String?       @unique
+  refunded_amount Decimal       @default(0) @db.Decimal(10, 2)
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+
+  consultation consultations @relation(fields: [consultation_id], references: [id])
+
+  @@index([consultation_id])
+  @@index([status, created_at])
+}
+
+model audit_logs {
+  id          Int      @id @default(autoincrement())
+  actor_id    Int?
+  actor_role  String?
+  action      String
+  resource    String
+  resource_id String?
+  ip_address  String?
+  request_id  String?
+  metadata    Json?
+  created_at  DateTime @default(now())
+
+  @@index([actor_id, created_at])
+  @@index([resource, resource_id])
+  @@index([created_at])
+}
+
+model idempotency_keys {
+  id              Int      @id @default(autoincrement())
+  key             String
+  user_id         Int
+  request_hash    String
+  response_status Int?
+  response_body   Json?
+  created_at      DateTime @default(now())
+  expires_at      DateTime
+
+  @@unique([user_id, key])
+  @@index([expires_at])
 }

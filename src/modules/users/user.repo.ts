@@ -104,4 +104,14 @@ export const UserRepo = {
             { operation: 'softDelete', entity: ENTITY },
         );
     },
+
+    revokeSessions: (uuid: string) => {
+        return dbOperation(
+            () => prisma.user_refresh_sessions.updateMany({
+                where: { revoked_at: null, user: { uuid } },
+                data: { revoked_at: new Date(), updated_at: new Date() },
+            }),
+            { operation: 'revokeSessions', entity: 'Session' },
+        );
+    },
 };

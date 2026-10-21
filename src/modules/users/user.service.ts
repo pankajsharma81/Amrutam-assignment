@@ -1,55 +1,52 @@
-import { randomUUID } from 'crypto';
+import { UserRole } from '@prisma/client';
 import { UserRepo } from './user.repo';
 import { AppError } from '../../core/errors/AppError';
 import { HTTP_STATUS } from '../../shared/constants';
 import { USER_CONSTANTS } from './user.constants';
-import { hashPassword } from '../auth/auth.tokens';
-import { CreateUserPayload, UpdateUserPayload } from './user.interface';
+
+const notFound = () => new AppError(USER_CONSTANTS.MESSAGES.NOT_FOUND, HTTP_STATUS.NOT_FOUND);
 
 export const UserService = {
-    list: async (filters: {
+    list: (filters: {
         search?: string;
-        role?: string;
+        role?: UserRole;
         is_active?: boolean;
         page?: number;
         limit?: number;
-    }) => {
-        return UserRepo.list(filters);
-    },
+    }) => UserRepo.list(filters),
 
     getByUuid: async (uuid: string) => {
         const user = await UserRepo.findByUuid(uuid);
-        if (!user) {
-            throw new AppError(USER_CONSTANTS.MESSAGES.NOT_FOUND, HTTP_STATUS.NOT_FOUND);
-        }
+        if (!user) throw notFound();
         return user;
     },
 
-    create: async (payload: CreateUserPayload) => {
-        const existing = await UserRepo.findByEmail(payload.email);
-        if (existing) {
-            throw new AppError(USER_CONSTANTS.MESSAGES.ALREADY_EXISTS, HTTP_STATUS.CONFLICT);
-        }
-
-        const hashedPassword = await hashPassword(payload.password);
-        const uuid = randomUUID();
-
-        return UserRepo.create({ ...payload, password: hashedPassword, uuid });
-    },
-
-    update: async (uuid: string, payload: UpdateUserPayload) => {
+    updateMe: async (uuid: string, payload: { name?: string; phone?: string }) => {
         const user = await UserRepo.findByUuid(uuid);
-        if (!user) {
-            throw new AppError(USER_CONSTANTS.MESSAGES.NOT_FOUND, HTTP_STATUS.NOT_FOUND);
-        }
+        if (!user) throw notFound();
         return UserRepo.update(uuid, payload);
     },
 
-    delete: async (uuid: string) => {
-        const user = await UserRepo.findByUuid(uuid);
-        if (!user) {
-            throw new AppError(USER_CONSTANTS.MESSAGES.NOT_FOUND, HTTP_STATUS.NOT_FOUND);
+    updateRole: async (actorUuid: string, targetUuid: string, role: UserRole) => {
+        if (actorUuid === targetUuid) {
+            throw new AppError('You cannot change your own role', HTTP_STATUS.BAD_REQUEST);
         }
-        await UserRepo.softDelete(uuid);
+        const user = await UserRepo.findByUuid(targetUuid);
+        if (!user) throw notFound();
+
+        const updated = await UserRepo.update(targetUuid, { role });
+        await UserRepo.revokeSessions(targetUuid);
+        return updated;
+    },
+
+    delete: async (actorUuid: string, targetUuid: string) => {
+        if (actorUuid === targetUuid) {
+            throw new AppError('You cannot delete your own account', HTTP_STATUS.BAD_REQUEST);
+        }
+        const user = await UserRepo.findByUuid(targetUuid);
+        if (!user) throw notFound();
+
+        await UserRepo.softDelete(targetUuid);
+        await UserRepo.revokeSessions(targetUuid);
     },
 };

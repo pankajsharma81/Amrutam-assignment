@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import {
+    getMeHandler,
+    updateMeHandler,
     listUsersHandler,
     getUserHandler,
-    createUserHandler,
-    updateUserHandler,
+    updateRoleHandler,
     deleteUserHandler,
 } from './user.controller';
 import { authMiddleware, requireRole } from '../../middleware/authMiddleware';
@@ -12,15 +13,12 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.get('/me', getMeHandler);
+router.patch('/me', updateMeHandler);
 
-router.get('/', requireRole('ADMIN', 'MANAGER'), listUsersHandler);
-
-router.get('/:uuid', getUserHandler);
-
-router.post('/', requireRole('ADMIN'), createUserHandler);
-
-router.put('/:uuid', requireRole('ADMIN', 'MANAGER'), updateUserHandler);
-
+router.get('/', requireRole('ADMIN'), listUsersHandler);
+router.get('/:uuid', requireRole('ADMIN'), getUserHandler);
+router.patch('/:uuid/role', requireRole('ADMIN'), updateRoleHandler);
 router.delete('/:uuid', requireRole('ADMIN'), deleteUserHandler);
 
 export default router;
